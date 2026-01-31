@@ -6,10 +6,11 @@ def get_vocab(meta_data_dir,vocab_data_dump_dir="vocab_data.json"):
         "total_frequency" : 0
     }
     with open(meta_data_dir, "r", encoding="utf-8") as r:
-        lines = r.readlines()
+        lines = [line for line in r.readlines() if line.strip()]
         for line in lines:
             line = line.strip()
-            label_str = line.split("\t")[-1].replace(" ","")
+            split_units = line.split("\t")
+            label_str = split_units[-1].replace(" ", "")
             labels = list(label_str)
             for label in labels:
                 vocab_data["tokens"][label] = vocab_data["tokens"].get(label, 0) + 1
@@ -21,10 +22,13 @@ def get_clean_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.
     vocab_data = json.load(open("vocab_data.json", "r", encoding="utf-8"))
     clean_meta_data = dict()
     with open(meta_data_dir, "r", encoding="utf-8") as r:
-        lines = r.readlines()
+        lines = [line for line in r.readlines() if line.strip()]
+        print(f"total count of original vocab data = {len(vocab_data["tokens"])}")
+        print(f"total frequency of original vocab data = {vocab_data["total_frequency"]}")
+        print(f"total count of original meta data = {len(lines)}")
         for line in lines:
             line = line.strip()
-            split_units = line.split("\t")[-1]
+            split_units = line.split("\t")
             label_str = split_units[-1].replace(" ", "")
             labels = list(label_str)
             skip = False
@@ -34,12 +38,19 @@ def get_clean_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.
                     skip = True
                     break
             if not skip:
-                clean_meta_data[label_str] = split_units[0]
+                audio_rel_path = split_units[0]
+                clean_meta_data[audio_rel_path] = label_str
 
     keys = list(vocab_data["tokens"].keys())
     for k in keys:
         if vocab_data["tokens"][k] < skip_threshold:
+            vocab_data["total_frequency"] -= vocab_data["tokens"][k]
             del vocab_data["tokens"][k]
+
+    print()
+    print(f"total count of new vocab data = {len(vocab_data["tokens"])}")
+    print(f"total frequency of new vocab data = {vocab_data["total_frequency"]}")
+    print(f"total count of new meta data = {len(clean_meta_data)}")
 
     with open(clean_meta_data_dump_dir, "w", encoding="utf-8") as w:
         json.dump(clean_meta_data, w)
