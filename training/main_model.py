@@ -4,15 +4,15 @@ from typing import List
 from torchinfo import summary
 
 class ResidualTDNNBlock(nn.Module):
-    def __init__(self, in_dim: int, out_dim: int, dilation: int = 1):
+    def __init__(self, in_dim: int, out_dim: int, dilation: int = 1, stride: int = 1):
         super().__init__()
-        padding = dilation  # keep output length same
-        self.conv = nn.Conv1d(in_dim, out_dim, kernel_size=3, stride=1, padding=padding, dilation=dilation)
+        padding = dilation
+        self.conv = nn.Conv1d(in_dim, out_dim, kernel_size=3, stride=stride, padding=padding, dilation=dilation)
         self.bn = nn.BatchNorm1d(out_dim)
         self.relu = nn.ReLU()
-        if in_dim != out_dim:
+        if in_dim != out_dim or stride != 1:
             self.downsample = nn.Sequential(
-                nn.Conv1d(in_dim, out_dim, kernel_size=1),
+                nn.Conv1d(in_dim, out_dim, kernel_size=1, stride=stride),
                 nn.BatchNorm1d(out_dim)
             )
         else:
@@ -33,10 +33,14 @@ class TDNNASR(nn.Module):
             self,
             input_dim: int = 560,
             block_dims: List[int] = [512, 512, 512],
+            dilations: List[int] = None,
+            strides: List[int] = None,
             proj_dim: int = 128,
             num_classes: int = 409
     ):
         super().__init__()
+
+        assert len(block_dims) == len(dilations) == len(strides), "block_dims, dilations and strides must have same length"
 
         first_dim = block_dims[0]
         self.proj = nn.Sequential(
@@ -47,8 +51,8 @@ class TDNNASR(nn.Module):
 
         layers = []
         in_dim = first_dim
-        for out_dim in block_dims:
-            layers.append(ResidualTDNNBlock(in_dim, out_dim))
+        for i, out_dim in enumerate(block_dims):
+            layers.append(ResidualTDNNBlock(in_dim, out_dim, dilation=dilations[i], stride=strides[i]))
             in_dim = out_dim
 
         self.blocks = nn.Sequential(*layers)
@@ -73,6 +77,8 @@ if __name__ == "__main__":
     model = TDNNASR(
         input_dim=560,
         block_dims=[512] * 8,
+        dilations=[1, 2, 4, 2, 1, 2, 4, 2],
+        strides=[1, 1, 1, 1, 1, 1, 1, 2],
         proj_dim=128,
         num_classes=409
     )
