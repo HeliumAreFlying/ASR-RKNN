@@ -1,3 +1,4 @@
+import librosa
 import numpy as np
 import soundfile as sf
 import kaldi_native_fbank as knf
@@ -7,6 +8,13 @@ def load_audio(filename: str) -> Tuple[np.ndarray, int]:
     data, sample_rate = sf.read(filename, always_2d=True, dtype="float32")
     data = data[:, 0]
     return np.ascontiguousarray(data), int(sample_rate)
+
+def load_and_resample_audio(filename: str, target_sr: int = 16000) -> Tuple[np.ndarray, int]:
+    samples, sr = load_audio(filename)
+    if sr != target_sr:
+        samples = librosa.resample(samples, orig_sr=sr, target_sr=target_sr)
+        sr = target_sr
+    return np.ascontiguousarray(samples, dtype=np.float32), int(sr)
 
 def compute_feat(samples: np.ndarray, sample_rate: int, window_size: int, window_shift: int) -> np.ndarray:
     opts = knf.FbankOptions()
@@ -35,3 +43,8 @@ def compute_feat(samples: np.ndarray, sample_rate: int, window_size: int, window
         strides=((window_shift * features.shape[1]) * 4, 4),
     )
     return np.ascontiguousarray(features, dtype=np.float32)
+
+if __name__ == "__main__":
+    wave_filepath = ""
+    samples, sr = load_and_resample_audio(wave_filepath)
+
