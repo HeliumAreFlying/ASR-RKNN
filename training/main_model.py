@@ -3,17 +3,16 @@ import torch.nn as nn
 from typing import List
 from torchinfo import summary
 
-
 class ResidualTDNNBlock(nn.Module):
-    def __init__(self, in_dim: int, out_dim: int):
+    def __init__(self, in_dim: int, out_dim: int, dilation: int = 1):
         super().__init__()
-        self.conv = nn.Conv1d(in_dim, out_dim, kernel_size=3, stride=1, padding=1)
+        padding = dilation  # keep output length same
+        self.conv = nn.Conv1d(in_dim, out_dim, kernel_size=3, stride=1, padding=padding, dilation=dilation)
         self.bn = nn.BatchNorm1d(out_dim)
         self.relu = nn.ReLU()
-
         if in_dim != out_dim:
             self.downsample = nn.Sequential(
-                nn.Conv1d(in_dim, out_dim, kernel_size=1, stride=1),
+                nn.Conv1d(in_dim, out_dim, kernel_size=1),
                 nn.BatchNorm1d(out_dim)
             )
         else:
@@ -24,13 +23,10 @@ class ResidualTDNNBlock(nn.Module):
         x = self.conv(x)
         x = self.bn(x)
         x = self.relu(x)
-
         if self.downsample is not None:
             residual = self.downsample(residual)
-
         x = x + residual
         return x
-
 
 class TDNNASR(nn.Module):
     def __init__(
@@ -76,7 +72,7 @@ class TDNNASR(nn.Module):
 if __name__ == "__main__":
     model = TDNNASR(
         input_dim=560,
-        block_dims=[512, 512, 512],
+        block_dims=[512] * 16,
         proj_dim=128,
         num_classes=409
     )
