@@ -72,7 +72,7 @@ class TDNNASR(nn.Module):
 if __name__ == "__main__":
     model = TDNNASR(
         input_dim=560,
-        block_dims=[512] * 16,
+        block_dims=[512] * 8,
         proj_dim=128,
         num_classes=409
     )
