@@ -17,7 +17,7 @@ def get_vocab(meta_data_dir,vocab_data_dump_dir="vocab_data.json"):
     with open(vocab_data_dump_dir, "w", encoding="utf-8") as w:
         json.dump(vocab_data, w)
 
-def get_clean_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.json",clean_meta_data_dump_dir="clean_meta_data.json",skip_threshold=10):
+def get_clean_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.json",clean_meta_data_dump_dir="clean_meta_data.json",skip_threshold=10):
     vocab_data = json.load(open("vocab_data.json", "r", encoding="utf-8"))
     clean_meta_data = dict()
     with open(meta_data_dir, "r", encoding="utf-8") as r:
@@ -35,8 +35,17 @@ def get_clean_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.json",clea
                     break
             if not skip:
                 clean_meta_data[label_str] = split_units[0]
+
+    keys = list(vocab_data["tokens"].keys())
+    for k in keys:
+        if vocab_data["tokens"][k] < skip_threshold:
+            del vocab_data["tokens"][k]
+
     with open(clean_meta_data_dump_dir, "w", encoding="utf-8") as w:
         json.dump(clean_meta_data, w)
+
+    with open(vocab_data_dump_dir, "w", encoding="utf-8") as w:
+        json.dump(vocab_data, w)
 
 if __name__ == "__main__":
     vocab_data_dump_dir = "vocab_data.json"
@@ -44,7 +53,7 @@ if __name__ == "__main__":
     clean_meta_data_dump_dir = "clean_meta_data.json"
     get_vocab(meta_data_dir=meta_data_dir,
               vocab_data_dump_dir=vocab_data_dump_dir)
-    get_clean_meta_data(meta_data_dir=meta_data_dir,
-                        vocab_data_dump_dir=vocab_data_dump_dir,
-                        clean_meta_data_dump_dir=clean_meta_data_dump_dir,
-                        skip_threshold=10)
+    get_clean_vocab_and_meta_data(meta_data_dir=meta_data_dir,
+                                 vocab_data_dump_dir=vocab_data_dump_dir,
+                                 clean_meta_data_dump_dir=clean_meta_data_dump_dir,
+                                 skip_threshold=10)
