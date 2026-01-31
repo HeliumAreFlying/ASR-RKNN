@@ -78,7 +78,7 @@ if __name__ == "__main__":
         input_dim=560,
         block_dims=[512] * 9,
         dilations=[1, 2, 4, 2, 1, 2, 4, 2, 1],
-        strides=[1, 1, 2, 1, 1, 2, 1, 1, 2],
+        strides=[1, 1, 1, 1, 1, 1, 1, 1, 2],
         proj_dim=128,
         num_classes=409
     )
