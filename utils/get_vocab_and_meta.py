@@ -58,6 +58,20 @@ def get_clean_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.
     with open(vocab_data_dump_dir, "w", encoding="utf-8") as w:
         json.dump(vocab_data, w)
 
+def check_vocab_data(vocab_dir="vocab_data.json"):
+    check_dataset = [
+        "打开头灯","头盔","安全","上报"
+    ]
+    check_set = set(list("".join(check_dataset)))
+    with open(vocab_dir, "r", encoding="utf-8") as r:
+        vocab_data = json.load(r)
+        tokens = vocab_data["tokens"]
+        entire_set = set(tokens.keys())
+        if len(check_set & entire_set) != len(check_set):
+            raise Exception("The vocabulary is too small, please add more training data")
+
+    print("Data check passed")
+
 if __name__ == "__main__":
     vocab_data_dump_dir = "vocab_data.json"
     meta_data_dir = r"C:\Files\TrainingDatas\zhvoice\metadata.csv"
@@ -68,3 +82,4 @@ if __name__ == "__main__":
                                  vocab_data_dump_dir=vocab_data_dump_dir,
                                  clean_meta_data_dump_dir=clean_meta_data_dump_dir,
                                  skip_threshold=10)
+    check_vocab_data(vocab_dir=vocab_data_dump_dir)
