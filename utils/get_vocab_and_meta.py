@@ -1,6 +1,6 @@
 import json
 
-def get_vocab(meta_data_dir,vocab_data_dump_dir="vocab_data.json"):
+def get_zh_vocab(meta_data_dir,vocab_data_dump_dir="vocab_data.json"):
     vocab_data = {
         "tokens" : dict(),
         "total_frequency" : 0
@@ -18,7 +18,7 @@ def get_vocab(meta_data_dir,vocab_data_dump_dir="vocab_data.json"):
     with open(vocab_data_dump_dir, "w", encoding="utf-8") as w:
         json.dump(vocab_data, w)
 
-def get_clean_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.json",clean_meta_data_dump_dir="clean_meta_data.json",skip_threshold=10):
+def get_clean_zh_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.json",clean_meta_data_dump_dir="clean_meta_data.json",skip_threshold=10):
     vocab_data = json.load(open("vocab_data.json", "r", encoding="utf-8"))
     clean_meta_data = dict()
     with open(meta_data_dir, "r", encoding="utf-8") as r:
@@ -58,7 +58,7 @@ def get_clean_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.
     with open(vocab_data_dump_dir, "w", encoding="utf-8") as w:
         json.dump(vocab_data, w)
 
-def check_vocab_data(vocab_dir="vocab_data.json"):
+def check_zh_vocab_data(vocab_dir="vocab_data.json"):
     check_dataset = [
         "打开头灯","头盔","安全","上报","云端","请示","危险情况",
         "摔倒","坠落","塌方","瓦斯泄露"
@@ -77,10 +77,10 @@ if __name__ == "__main__":
     vocab_data_dump_dir = "vocab_data.json"
     meta_data_dir = r"C:\Files\TrainingDatas\zhvoice\metadata.csv"
     clean_meta_data_dump_dir = "clean_meta_data.json"
-    get_vocab(meta_data_dir=meta_data_dir,
-              vocab_data_dump_dir=vocab_data_dump_dir)
-    get_clean_vocab_and_meta_data(meta_data_dir=meta_data_dir,
-                                 vocab_data_dump_dir=vocab_data_dump_dir,
-                                 clean_meta_data_dump_dir=clean_meta_data_dump_dir,
-                                 skip_threshold=10)
-    check_vocab_data(vocab_dir=vocab_data_dump_dir)
+    get_zh_vocab(meta_data_dir=meta_data_dir,
+                 vocab_data_dump_dir=vocab_data_dump_dir)
+    get_clean_zh_vocab_and_meta_data(meta_data_dir=meta_data_dir,
+                                     vocab_data_dump_dir=vocab_data_dump_dir,
+                                     clean_meta_data_dump_dir=clean_meta_data_dump_dir,
+                                     skip_threshold=10)
+    check_zh_vocab_data(vocab_dir=vocab_data_dump_dir)
