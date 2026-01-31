@@ -18,7 +18,7 @@ class ResidualTDNNBlock(nn.Module):
         return x
 
 class TDNNASR(nn.Module):
-    def __init__(self, input_dim=560, hidden_dim=512, num_classes=40, num_blocks=2):
+    def __init__(self, input_dim=560, hidden_dim=512, proj_dim=256, num_classes=40, num_blocks=2):
         super().__init__()
 
         self.proj = nn.Sequential(
@@ -31,7 +31,11 @@ class TDNNASR(nn.Module):
             *[ResidualTDNNBlock(hidden_dim) for _ in range(num_blocks)]
         )
 
-        self.output_layer = nn.Conv1d(hidden_dim, num_classes, kernel_size=1)
+        self.output_layer = nn.Sequential(
+            nn.Conv1d(hidden_dim, proj_dim, kernel_size=1),
+            nn.ReLU(),
+            nn.Conv1d(proj_dim, num_classes, kernel_size=1)
+        )
 
     def forward(self, x):
         x = x.transpose(1, 2)
