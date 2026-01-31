@@ -25,7 +25,7 @@ def compute_feat(samples: np.ndarray, sample_rate: int, window_size: int, window
     opts.mel_opts.num_bins = 80
 
     online_fbank = knf.OnlineFbank(opts)
-    online_fbank.accept_waveform(sample_rate, (samples * 32768).tolist())
+    online_fbank.accept_waveform(sample_rate, (samples * 32768))
     online_fbank.input_finished()
 
     if online_fbank.num_frames_ready == 0:
