@@ -80,7 +80,7 @@ if __name__ == "__main__":
         dilations=[1, 2, 4, 2, 1, 2, 4, 2, 1],
         strides=[1, 1, 1, 1, 1, 1, 1, 1, 2],
         proj_dim=128,
-        num_classes=409
+        num_classes=3500
     )
 
     summary(
