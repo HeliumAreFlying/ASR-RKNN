@@ -7,13 +7,13 @@ class ResidualTDNNBlock(nn.Module):
         super().__init__()
         self.conv = nn.Conv1d(dim, dim, kernel_size=3, stride=1, padding=1)
         self.bn = nn.BatchNorm1d(dim)
-        self.leaky_relu = nn.LeakyReLU()
+        self.relu = nn.ReLU()
 
     def forward(self, x):
         residual = x
         x = self.conv(x)
         x = self.bn(x)
-        x = self.leaky_relu(x)
+        x = self.relu(x)
         x = x + residual
         return x
 
@@ -24,7 +24,7 @@ class TDNNASR(nn.Module):
         self.proj = nn.Sequential(
             nn.Conv1d(input_dim, hidden_dim, kernel_size=3, stride=1, padding=1),
             nn.BatchNorm1d(hidden_dim),
-            nn.LeakyReLU()
+            nn.ReLU()
         )
 
         self.blocks = nn.Sequential(
