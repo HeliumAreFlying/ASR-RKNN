@@ -60,7 +60,8 @@ def get_clean_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.
 
 def check_vocab_data(vocab_dir="vocab_data.json"):
     check_dataset = [
-        "打开头灯","头盔","安全","上报"
+        "打开头灯","头盔","安全","上报","云端","请示","危险情况",
+        "摔倒","坠落","塌方","瓦斯泄露"
     ]
     check_set = set(list("".join(check_dataset)))
     with open(vocab_dir, "r", encoding="utf-8") as r:
