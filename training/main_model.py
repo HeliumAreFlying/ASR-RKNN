@@ -141,8 +141,17 @@ class TDNNASR(nn.Module):
         assert self.vocab_data is not None, "vocab_data must not be None"
 
         final_output_from_nn = self.forward_wave(wave_filepath)
+        predicted_ids = torch.argmax(final_output_from_nn, dim=-1).cpu().numpy()
 
+        sentence = ""
+        prev_token = None
+        for idx in predicted_ids:
+            token = self.vocab_data["id_to_token"].get(str(idx), "")
+            if token != prev_token:
+                sentence += token
+                prev_token = token
 
+        return sentence
 
 if __name__ == "__main__":
     vocab_data = json.load(open(r"basic_data/vocab_data.json"))
@@ -170,4 +179,5 @@ if __name__ == "__main__":
     final_output = model.forward_wave(wave_filepath=r"examples/en.wav")
     print(final_output.size())
 
-    model.get_paragraph(wave_filepath=r"examples/zh.wav")
+    sentence = model.get_paragraph(wave_filepath=r"examples/zh.wav")
+    print(len(sentence),sentence[:16])
