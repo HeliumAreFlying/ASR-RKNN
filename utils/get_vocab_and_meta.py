@@ -26,8 +26,8 @@ def get_clean_zh_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_da
     clean_meta_data = dict()
     with open(meta_data_dir, "r", encoding="utf-8") as r:
         lines = [line for line in r.readlines() if line.strip()]
-        print(f"total count of original vocab data = {len(vocab_data["tokens"])}")
-        print(f"total frequency of original vocab data = {vocab_data["total_frequency"]}")
+        print(f"total count of original vocab data = {len(vocab_data['tokens'])}")
+        print(f"total frequency of original vocab data = {vocab_data['total_frequency']}")
         print(f"total count of original meta data = {len(lines)}")
         for line in lines:
             line = line.strip()
@@ -54,13 +54,13 @@ def get_clean_zh_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_da
     tokens.sort(key = lambda x: vocab_data["tokens"][x])
     token_to_id = dict(zip(tokens, range(len(tokens))))
     id_to_token = dict(zip(range(len(tokens)), tokens))
-    
+
     vocab_data["token_to_id"] = token_to_id
     vocab_data["id_to_token"] = id_to_token
 
     print()
-    print(f"total count of new vocab data = {len(vocab_data["tokens"])}")
-    print(f"total frequency of new vocab data = {vocab_data["total_frequency"]}")
+    print(f"total count of new vocab data = {len(vocab_data['tokens'])}")
+    print(f"total frequency of new vocab data = {vocab_data['total_frequency']}")
     print(f"total count of new meta data = {len(clean_meta_data)}")
 
     with open(clean_meta_data_dump_dir, "w", encoding="utf-8") as w:
@@ -86,7 +86,7 @@ def check_zh_vocab_data(vocab_dir="vocab_data.json"):
 
 if __name__ == "__main__":
     vocab_data_dump_dir = "vocab_data.json"
-    meta_data_dir = r"C:\Files\TrainingDatas\zhvoice\metadata.csv"
+    meta_data_dir = r"D:\zhvoice\metadata.csv"
     clean_meta_data_dump_dir = "clean_meta_data.json"
     get_zh_vocab(meta_data_dir=meta_data_dir,
                  vocab_data_dump_dir=vocab_data_dump_dir)
