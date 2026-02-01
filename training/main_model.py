@@ -138,20 +138,12 @@ class TDNNASR(nn.Module):
         sentence = None
         if need_sentence:
             assert self.vocab_data is not None, "vocab_data must not be None"
-
-            vocab_size = self.vocab_data['vocab_size']
-            logits_for_decode = final_output.clone()
-            logits_for_decode[:, vocab_size] = -128
-
-            predicted_ids = torch.argmax(logits_for_decode, dim=-1).cpu().numpy()
+            predicted_ids = torch.argmax(final_output, dim=-1).cpu().numpy()
 
             sentence = ""
             prev_token = None
             for idx in predicted_ids:
-                if idx == vocab_size:
-                    token = ""
-                else:
-                    token = self.vocab_data["id_to_token"].get(str(idx), "")
+                token = self.vocab_data["id_to_token"].get(str(idx), "")
 
                 if token != prev_token:
                     sentence += token
@@ -168,7 +160,7 @@ if __name__ == "__main__":
         dilations=[1, 2, 4, 2, 1, 2, 4, 2, 1],
         strides=[1, 1, 1, 1, 1, 1, 1, 1, 2],
         proj_dim=128,
-        num_classes=vocab_data['vocab_size'] + 1,
+        num_classes=vocab_data['vocab_size'],
         vocab_data=vocab_data,
         max_window_size=512,
         max_window_shift=384
