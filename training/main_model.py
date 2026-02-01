@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import numpy as np
 from typing import List
 from torchinfo import summary
 from utils.get_feat import load_and_resample_audio,compute_feat
@@ -47,6 +48,8 @@ class TDNNASR(nn.Module):
 
         assert len(block_dims) == len(dilations) == len(strides), "block_dims, dilations and strides must have same length"
 
+        self.reduction = int(np.prod(strides))
+
         first_dim = block_dims[0]
         self.proj = nn.Sequential(
             nn.Conv1d(input_dim, first_dim, kernel_size=3, stride=1, padding=1),
@@ -77,11 +80,48 @@ class TDNNASR(nn.Module):
         x = x.transpose(1, 2)
         return x
 
-    def forward_wave(self,wave_filepath):
+    def forward_wave(self, wave_filepath, max_window_size=512, max_window_shift=384):
         samples, sr = load_and_resample_audio(wave_filepath)
         feats = compute_feat(samples, sample_rate=16000, window_size=7, window_shift=1)
         feats = torch.from_numpy(feats).float().to(public_device)
-        print(feats.shape)
+        total_frames = feats.size(0)
+        num_classes = self.output_layer[-1].out_channels
+
+        final_output = torch.zeros(total_frames // self.reduction, num_classes, device=public_device)
+
+        start_idx = 0
+        batch_inputs = []
+        batch_starts = []
+
+        with torch.no_grad():
+            while start_idx < total_frames:
+                end_idx = start_idx + max_window_size
+                chunk = feats[start_idx:end_idx]
+                current_length = chunk.size(0)
+
+                if current_length < max_window_size:
+                    pad_size = max_window_size - current_length
+                    pad_tensor = torch.zeros(pad_size, feats.size(1), device=public_device)
+                    chunk = torch.cat([chunk, pad_tensor], dim=0)
+
+                batch_inputs.append(chunk)
+                batch_starts.append(start_idx)
+                start_idx += max_window_shift
+
+            batch_tensor = torch.stack(batch_inputs, dim=0)
+            batch_results = self(batch_tensor)
+
+            for i, start_pos in enumerate(batch_starts):
+                result_chunk = batch_results[i]
+
+                out_start = start_pos // 2
+                out_end = min((start_pos + max_window_size) // 2, final_output.size(0))
+
+                valid_length = out_end - out_start
+                if valid_length > 0:
+                    final_output[out_start:out_end] = result_chunk[:valid_length]
+
+        return final_output
 
 
 if __name__ == "__main__":
@@ -96,10 +136,11 @@ if __name__ == "__main__":
 
     summary(
         model,
-        input_size=(1, 800, 560),
+        input_size=(1, 512, 560),
         device=public_device,
         dtypes=[torch.float32],
         col_names=["input_size", "output_size", "num_params", "mult_adds"]
     )
 
-    model.forward_wave(wave_filepath=r"examples/zh.wav")
+    final_output = model.forward_wave(wave_filepath=r"examples/en.wav")
+    print(final_output.size())
