@@ -1,5 +1,8 @@
 import json
 
+from transformers.image_transforms import id_to_rgb
+
+
 def get_zh_vocab(meta_data_dir,vocab_data_dump_dir="vocab_data.json"):
     vocab_data = {
         "tokens" : dict(),
@@ -46,6 +49,14 @@ def get_clean_zh_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_da
         if vocab_data["tokens"][k] < skip_threshold:
             vocab_data["total_frequency"] -= vocab_data["tokens"][k]
             del vocab_data["tokens"][k]
+
+    tokens = list(vocab_data["tokens"].keys())
+    tokens.sort(key = lambda x: vocab_data["tokens"][x])
+    token_to_id = dict(zip(tokens, range(len(tokens))))
+    id_to_token = dict(zip(range(len(tokens)), tokens))
+    
+    vocab_data["token_to_id"] = token_to_id
+    vocab_data["id_to_token"] = id_to_token
 
     print()
     print(f"total count of new vocab data = {len(vocab_data["tokens"])}")
