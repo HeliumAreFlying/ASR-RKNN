@@ -32,13 +32,15 @@ class TDNNASR(nn.Module):
     def __init__(
             self,
             input_dim: int = 560,
-            block_dims: List[int] = [512, 512, 512],
+            block_dims: List[int] = None,
             dilations: List[int] = None,
             strides: List[int] = None,
             proj_dim: int = 128,
             num_classes: int = 409
     ):
         super().__init__()
+
+        assert None not in [block_dims, dilations, strides], "block_dims and dilations must not be None"
 
         assert len(block_dims) == len(dilations) == len(strides), "block_dims, dilations and strides must have same length"
 
