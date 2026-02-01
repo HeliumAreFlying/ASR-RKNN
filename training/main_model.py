@@ -141,7 +141,7 @@ class TDNNASR(nn.Module):
 
             vocab_size = self.vocab_data['vocab_size']
             logits_for_decode = final_output.clone()
-            logits_for_decode[:, vocab_size] = -float('inf')
+            logits_for_decode[:, vocab_size] = -128
 
             predicted_ids = torch.argmax(logits_for_decode, dim=-1).cpu().numpy()
 
