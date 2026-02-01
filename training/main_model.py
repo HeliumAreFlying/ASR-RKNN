@@ -87,7 +87,8 @@ class TDNNASR(nn.Module):
         total_frames = feats.size(0)
         num_classes = self.output_layer[-1].out_channels
 
-        final_output = torch.zeros(total_frames // self.reduction, num_classes, device=public_device)
+        total_out_frames = (total_frames + self.reduction - 1) // self.reduction
+        final_output = torch.zeros(total_out_frames, num_classes, device=public_device)
 
         start_idx = 0
         batch_inputs = []
@@ -95,7 +96,7 @@ class TDNNASR(nn.Module):
 
         with torch.no_grad():
             while start_idx < total_frames:
-                end_idx = start_idx + max_window_size
+                end_idx = min(start_idx + max_window_size, total_frames)
                 chunk = feats[start_idx:end_idx]
                 current_length = chunk.size(0)
 
@@ -114,12 +115,18 @@ class TDNNASR(nn.Module):
             for i, start_pos in enumerate(batch_starts):
                 result_chunk = batch_results[i]
 
-                out_start = start_pos // 2
-                out_end = min((start_pos + max_window_size) // 2, final_output.size(0))
+                actual_chunk_len = min(max_window_size, total_frames - start_pos)
+                output_chunk_len = actual_chunk_len // self.reduction
 
-                valid_length = out_end - out_start
-                if valid_length > 0:
-                    final_output[out_start:out_end] = result_chunk[:valid_length]
+                out_start = start_pos // self.reduction
+                out_end = out_start + output_chunk_len
+
+                if out_end > final_output.size(0):
+                    out_end = final_output.size(0)
+                    output_chunk_len = out_end - out_start
+
+                if output_chunk_len > 0:
+                    final_output[out_start:out_end] = result_chunk[:output_chunk_len]
 
         return final_output
 
