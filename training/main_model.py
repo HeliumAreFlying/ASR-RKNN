@@ -12,13 +12,13 @@ class ResidualTDNNBlock(nn.Module):
     def __init__(self, in_dim: int, out_dim: int, dilation: int = 1, stride: int = 1):
         super().__init__()
         padding = dilation
-        self.conv = nn.Conv1d(in_dim, out_dim, kernel_size=3, stride=stride, padding=padding, dilation=dilation)
-        self.bn = nn.BatchNorm1d(out_dim)
+        self.conv = nn.Conv2d(in_dim, out_dim, kernel_size=(3, 1), stride=(stride, 1), padding=(padding, 0), dilation=(dilation, 1))
+        self.bn = nn.BatchNorm2d(out_dim)
         self.relu = nn.ReLU()
         if in_dim != out_dim or stride != 1:
             self.downsample = nn.Sequential(
-                nn.Conv1d(in_dim, out_dim, kernel_size=1, stride=stride),
-                nn.BatchNorm1d(out_dim)
+                nn.Conv2d(in_dim, out_dim, kernel_size=(1, 1), stride=(stride, 1)),
+                nn.BatchNorm2d(out_dim)
             )
         else:
             self.downsample = None
@@ -59,8 +59,8 @@ class TDNNASR(nn.Module):
 
         first_dim = block_dims[0]
         self.proj = nn.Sequential(
-            nn.Conv1d(input_dim, first_dim, kernel_size=3, stride=1, padding=1),
-            nn.BatchNorm1d(first_dim),
+            nn.Conv2d(input_dim, first_dim, kernel_size=(3, 1), stride=(1, 1), padding=(1, 0)),
+            nn.BatchNorm2d(first_dim),
             nn.ReLU()
         )
 
@@ -74,9 +74,9 @@ class TDNNASR(nn.Module):
 
         final_dim = block_dims[-1]
         self.output_layer = nn.Sequential(
-            nn.Conv1d(final_dim, proj_dim, kernel_size=1),
+            nn.Conv2d(final_dim, proj_dim, kernel_size=(1, 1)),
             nn.ReLU(),
-            nn.Conv1d(proj_dim, num_classes, kernel_size=1)
+            nn.Conv2d(proj_dim, num_classes, kernel_size=(1, 1))
         )
 
     def forward(self, x):
@@ -115,9 +115,9 @@ class TDNNASR(nn.Module):
                 start_idx += self.max_window_shift
 
             batch_tensor = torch.stack(batch_inputs, dim=0)
-            batch_tensor = batch_tensor.transpose(1,2)
+            batch_tensor = batch_tensor.unsqueeze(-1).transpose(1, 2)
             batch_results = self.forward(batch_tensor)
-            batch_results = batch_results.transpose(1, 2)
+            batch_results = batch_results.squeeze(-1).transpose(1, 2)
 
             for i, start_pos in enumerate(batch_starts):
                 result_chunk = batch_results[i]
@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
     summary(
         model,
-        input_size=(1, 560, 512),
+        input_size=(1, 560, 512, 1),
         device=public_device,
         dtypes=[torch.float32],
         col_names=["input_size", "output_size", "num_params", "mult_adds"]
