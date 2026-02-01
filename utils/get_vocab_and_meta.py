@@ -72,7 +72,8 @@ def get_clean_zh_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_da
 def check_zh_vocab_data(vocab_dir="vocab_data.json"):
     check_dataset = [
         "打开头灯","头盔","安全","上报","云端","请示","危险情况",
-        "摔倒","坠落","塌方","瓦斯泄露"
+        "摔倒","坠落","塌方","瓦斯泄露","救援","快速","麻烦你们快点",
+        "小杜"
     ]
     check_set = set(list("".join(check_dataset)))
     with open(vocab_dir, "r", encoding="utf-8") as r:
@@ -93,5 +94,5 @@ if __name__ == "__main__":
     get_clean_zh_vocab_and_meta_data(meta_data_dir=meta_data_dir,
                                      vocab_data_dump_dir=vocab_data_dump_dir,
                                      clean_meta_data_dump_dir=clean_meta_data_dump_dir,
-                                     skip_threshold=10)
+                                     skip_threshold=32)
     check_zh_vocab_data(vocab_dir=vocab_data_dump_dir)
