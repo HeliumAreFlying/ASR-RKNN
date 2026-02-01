@@ -3,9 +3,8 @@ import json
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
-from torch.cuda.amp import GradScaler, autocast
+from torch.amp import GradScaler
 from torch.nn.utils.rnn import pad_sequence
-import numpy as np
 from pathlib import Path
 import sys
 
@@ -114,7 +113,7 @@ def train():
 
             optimizer.zero_grad()
 
-            with autocast():
+            with torch.amp.autocast(device_type=DEVICE):
                 out = model(x)
                 out = out.squeeze(-1).transpose(1, 2)
                 log_probs = torch.nn.functional.log_softmax(out, dim=-1).transpose(0, 1)
