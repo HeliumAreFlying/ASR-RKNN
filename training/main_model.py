@@ -139,7 +139,6 @@ class TDNNASR(nn.Module):
         if need_sentence:
             assert self.vocab_data is not None, "vocab_data must not be None"
 
-            vocab_size = self.vocab_data['vocab_size']
             logits_for_decode = final_output.clone()
             logits_for_decode[:, 0] = -128
 
