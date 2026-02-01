@@ -2,6 +2,9 @@ import torch
 import torch.nn as nn
 from typing import List
 from torchinfo import summary
+from utils.get_feat import load_and_resample_audio,compute_feat
+
+public_device = "cuda" if torch.cuda.is_available() else "cpu"
 
 class ResidualTDNNBlock(nn.Module):
     def __init__(self, in_dim: int, out_dim: int, dilation: int = 1, stride: int = 1):
@@ -74,6 +77,12 @@ class TDNNASR(nn.Module):
         x = x.transpose(1, 2)
         return x
 
+    def forward_wave(self,wave_filepath):
+        samples, sr = load_and_resample_audio(wave_filepath)
+        feats = compute_feat(samples, sample_rate=16000, window_size=7, window_shift=1)
+        feats = torch.from_numpy(feats).float().to(public_device)
+        print(feats.shape)
+
 
 if __name__ == "__main__":
     model = TDNNASR(
@@ -83,12 +92,14 @@ if __name__ == "__main__":
         strides=[1, 1, 1, 1, 1, 1, 1, 1, 2],
         proj_dim=128,
         num_classes=3500
-    )
+    ).to(public_device)
 
     summary(
         model,
         input_size=(1, 800, 560),
-        device="cpu",
+        device=public_device,
         dtypes=[torch.float32],
         col_names=["input_size", "output_size", "num_params", "mult_adds"]
     )
+
+    model.forward_wave(wave_filepath=r"examples/zh.wav")
