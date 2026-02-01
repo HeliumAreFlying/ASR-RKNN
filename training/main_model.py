@@ -153,7 +153,7 @@ if __name__ == "__main__":
         dilations=[1, 2, 4, 2, 1, 2, 4, 2, 1],
         strides=[1, 1, 1, 1, 1, 1, 1, 1, 2],
         proj_dim=128,
-        num_classes=vocab_data['vocab_size'],
+        num_classes=vocab_data['vocab_size'] + 1,
         vocab_data=vocab_data,
         max_window_size=512,
         max_window_shift=384
