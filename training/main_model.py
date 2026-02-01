@@ -87,7 +87,7 @@ class TDNNASR(nn.Module):
         x = x.transpose(1, 2)
         return x
 
-    def forward_wave(self, wave_filepath):
+    def forward_wave(self, wave_filepath, need_sentence):
         samples, sr = load_and_resample_audio(wave_filepath)
         feats = compute_feat(samples, sample_rate=16000, window_size=7, window_shift=1)
         feats = torch.from_numpy(feats).float().to(public_device)
@@ -135,23 +135,20 @@ class TDNNASR(nn.Module):
                 if output_chunk_len > 0:
                     final_output[out_start:out_end] = result_chunk[:output_chunk_len]
 
-        return final_output
+        sentence = None
+        if need_sentence:
+            assert self.vocab_data is not None, "vocab_data must not be None"
+            predicted_ids = torch.argmax(final_output, dim=-1).cpu().numpy()
 
-    def get_paragraph(self, wave_filepath):
-        assert self.vocab_data is not None, "vocab_data must not be None"
+            sentence = ""
+            prev_token = None
+            for idx in predicted_ids:
+                token = self.vocab_data["id_to_token"].get(str(idx), "")
+                if token != prev_token:
+                    sentence += token
+                    prev_token = token
 
-        final_output_from_nn = self.forward_wave(wave_filepath)
-        predicted_ids = torch.argmax(final_output_from_nn, dim=-1).cpu().numpy()
-
-        sentence = ""
-        prev_token = None
-        for idx in predicted_ids:
-            token = self.vocab_data["id_to_token"].get(str(idx), "")
-            if token != prev_token:
-                sentence += token
-                prev_token = token
-
-        return sentence
+        return final_output,sentence
 
 if __name__ == "__main__":
     vocab_data = json.load(open(r"basic_data/vocab_data.json"))
@@ -176,8 +173,6 @@ if __name__ == "__main__":
         col_names=["input_size", "output_size", "num_params", "mult_adds"]
     )
 
-    final_output = model.forward_wave(wave_filepath=r"examples/en.wav")
+    final_output, sentence = model.forward_wave(wave_filepath=r"examples/en.wav", need_sentence=True)
     print(final_output.size())
-
-    sentence = model.get_paragraph(wave_filepath=r"examples/zh.wav")
     print(len(sentence),sentence[:16])
