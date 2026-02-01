@@ -42,7 +42,9 @@ class TDNNASR(nn.Module):
             strides: List[int] = None,
             proj_dim: int = 128,
             num_classes: int = 409,
-            vocab_data: dict = None
+            vocab_data: dict = None,
+            max_window_size: int = 512,
+            max_window_shift: int = 384
     ):
         super().__init__()
 
@@ -51,8 +53,9 @@ class TDNNASR(nn.Module):
         assert len(block_dims) == len(dilations) == len(strides), "block_dims, dilations and strides must have same length"
 
         self.vocab_data = vocab_data
-
         self.reduction = int(np.prod(strides))
+        self.max_window_size = max_window_size
+        self.max_window_shift = max_window_shift
 
         first_dim = block_dims[0]
         self.proj = nn.Sequential(
@@ -84,7 +87,7 @@ class TDNNASR(nn.Module):
         x = x.transpose(1, 2)
         return x
 
-    def forward_wave(self, wave_filepath, max_window_size=512, max_window_shift=384):
+    def forward_wave(self, wave_filepath):
         samples, sr = load_and_resample_audio(wave_filepath)
         feats = compute_feat(samples, sample_rate=16000, window_size=7, window_shift=1)
         feats = torch.from_numpy(feats).float().to(public_device)
@@ -100,18 +103,18 @@ class TDNNASR(nn.Module):
 
         with torch.no_grad():
             while start_idx < total_frames:
-                end_idx = min(start_idx + max_window_size, total_frames)
+                end_idx = min(start_idx + self.max_window_size, total_frames)
                 chunk = feats[start_idx:end_idx]
                 current_length = chunk.size(0)
 
-                if current_length < max_window_size:
-                    pad_size = max_window_size - current_length
+                if current_length < self.max_window_size:
+                    pad_size = self.max_window_size - current_length
                     pad_tensor = torch.zeros(pad_size, feats.size(1), device=public_device)
                     chunk = torch.cat([chunk, pad_tensor], dim=0)
 
                 batch_inputs.append(chunk)
                 batch_starts.append(start_idx)
-                start_idx += max_window_shift
+                start_idx += self.max_window_shift
 
             batch_tensor = torch.stack(batch_inputs, dim=0)
             batch_results = self(batch_tensor)
@@ -119,7 +122,7 @@ class TDNNASR(nn.Module):
             for i, start_pos in enumerate(batch_starts):
                 result_chunk = batch_results[i]
 
-                actual_chunk_len = min(max_window_size, total_frames - start_pos)
+                actual_chunk_len = min(self.max_window_size, total_frames - start_pos)
                 output_chunk_len = actual_chunk_len // self.reduction
 
                 out_start = start_pos // self.reduction
@@ -134,10 +137,10 @@ class TDNNASR(nn.Module):
 
         return final_output
 
-    def get_paragraph(self, wave_filepath, max_window_size=512, max_window_shift=384):
+    def get_paragraph(self, wave_filepath):
         assert self.vocab_data is not None, "vocab_data must not be None"
 
-        final_output_from_nn = self.forward_wave(wave_filepath, max_window_size, max_window_shift)
+        final_output_from_nn = self.forward_wave(wave_filepath)
 
 
 
@@ -151,7 +154,9 @@ if __name__ == "__main__":
         strides=[1, 1, 1, 1, 1, 1, 1, 1, 2],
         proj_dim=128,
         num_classes=vocab_data['vocab_size'],
-        vocab_data=vocab_data
+        vocab_data=vocab_data,
+        max_window_size=512,
+        max_window_shift=384
     ).to(public_device)
 
     summary(
