@@ -80,11 +80,9 @@ class TDNNASR(nn.Module):
         )
 
     def forward(self, x):
-        x = x.transpose(1, 2)
         x = self.proj(x)
         x = self.blocks(x)
         x = self.output_layer(x)
-        x = x.transpose(1, 2)
         return x
 
     def forward_wave(self, wave_filepath, need_sentence):
@@ -117,7 +115,9 @@ class TDNNASR(nn.Module):
                 start_idx += self.max_window_shift
 
             batch_tensor = torch.stack(batch_inputs, dim=0)
-            batch_results = self(batch_tensor)
+            batch_tensor = batch_tensor.transpose(1,2)
+            batch_results = self.forward(batch_tensor)
+            batch_results = batch_results.transpose(1, 2)
 
             for i, start_pos in enumerate(batch_starts):
                 result_chunk = batch_results[i]
@@ -175,7 +175,7 @@ if __name__ == "__main__":
 
     summary(
         model,
-        input_size=(1, 512, 560),
+        input_size=(1, 560, 512),
         device=public_device,
         dtypes=[torch.float32],
         col_names=["input_size", "output_size", "num_params", "mult_adds"]
