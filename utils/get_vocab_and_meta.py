@@ -1,8 +1,5 @@
 import json
 
-from transformers.image_transforms import id_to_rgb
-
-
 def get_zh_vocab(meta_data_dir,vocab_data_dump_dir="vocab_data.json"):
     vocab_data = {
         "tokens" : dict(),
@@ -22,7 +19,7 @@ def get_zh_vocab(meta_data_dir,vocab_data_dump_dir="vocab_data.json"):
         json.dump(vocab_data, w)
 
 def get_clean_zh_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_data.json",clean_meta_data_dump_dir="clean_meta_data.json",skip_threshold=10):
-    vocab_data = json.load(open("vocab_data.json", "r", encoding="utf-8"))
+    vocab_data = json.load(open("../basic_data/vocab_data.json", "r", encoding="utf-8"))
     clean_meta_data = dict()
     with open(meta_data_dir, "r", encoding="utf-8") as r:
         lines = [line for line in r.readlines() if line.strip()]
@@ -57,6 +54,7 @@ def get_clean_zh_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_da
 
     vocab_data["token_to_id"] = token_to_id
     vocab_data["id_to_token"] = id_to_token
+    vocab_data["vocab_size"] = len(vocab_data["tokens"])
 
     print()
     print(f"total count of new vocab data = {len(vocab_data['tokens'])}")
@@ -86,9 +84,9 @@ def check_zh_vocab_data(vocab_dir="vocab_data.json"):
     print("Data check passed")
 
 if __name__ == "__main__":
-    vocab_data_dump_dir = "vocab_data.json"
+    vocab_data_dump_dir = "../basic_data/vocab_data.json"
     meta_data_dir = r"D:\zhvoice\metadata.csv"
-    clean_meta_data_dump_dir = "clean_meta_data.json"
+    clean_meta_data_dump_dir = "../basic_data/clean_meta_data.json"
     get_zh_vocab(meta_data_dir=meta_data_dir,
                  vocab_data_dump_dir=vocab_data_dump_dir)
     get_clean_zh_vocab_and_meta_data(meta_data_dir=meta_data_dir,

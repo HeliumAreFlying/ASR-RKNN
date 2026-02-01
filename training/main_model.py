@@ -1,3 +1,4 @@
+import json
 import torch
 import torch.nn as nn
 import numpy as np
@@ -40,13 +41,16 @@ class TDNNASR(nn.Module):
             dilations: List[int] = None,
             strides: List[int] = None,
             proj_dim: int = 128,
-            num_classes: int = 409
+            num_classes: int = 409,
+            vocab_data: dict = None
     ):
         super().__init__()
 
         assert None not in [block_dims, dilations, strides], "block_dims and dilations must not be None"
 
         assert len(block_dims) == len(dilations) == len(strides), "block_dims, dilations and strides must have same length"
+
+        self.vocab_data = vocab_data
 
         self.reduction = int(np.prod(strides))
 
@@ -130,15 +134,24 @@ class TDNNASR(nn.Module):
 
         return final_output
 
+    def get_paragraph(self, wave_filepath, max_window_size=512, max_window_shift=384):
+        assert self.vocab_data is not None, "vocab_data must not be None"
+
+        final_output_from_nn = self.forward_wave(wave_filepath, max_window_size, max_window_shift)
+
+
 
 if __name__ == "__main__":
+    vocab_data = json.load(open(r"basic_data/vocab_data.json"))
+
     model = TDNNASR(
         input_dim=560,
         block_dims=[512] * 9,
         dilations=[1, 2, 4, 2, 1, 2, 4, 2, 1],
         strides=[1, 1, 1, 1, 1, 1, 1, 1, 2],
         proj_dim=128,
-        num_classes=3500
+        num_classes=vocab_data['vocab_size'],
+        vocab_data=vocab_data
     ).to(public_device)
 
     summary(
@@ -151,3 +164,5 @@ if __name__ == "__main__":
 
     final_output = model.forward_wave(wave_filepath=r"examples/en.wav")
     print(final_output.size())
+
+    model.get_paragraph(wave_filepath=r"examples/zh.wav")
