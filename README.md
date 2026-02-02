@@ -66,6 +66,7 @@ pip install torch torchaudio librosa soundfile kaldi-native-fbank torchinfo nump
 
 ```bash
 cd utils
+mkdir ../basic_data
 python get_vocab_and_meta.py
 ```
 
