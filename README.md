@@ -76,8 +76,7 @@ python get_vocab_and_meta.py
 ### 3. 模型训练
 
 ```bash
-cd training
-python train_entry.py
+python training/train_entry.py
 ```
 
 训练参数可在 `train_entry.py` 中修改：
@@ -162,7 +161,7 @@ print(f"识别结果: {sentence}")
 
 ## 许可证
 
-本项目采用 [LICENSE](LICENSE) 许可证。
+本项目采用MIT许可证。
 
 ## 贡献
 
