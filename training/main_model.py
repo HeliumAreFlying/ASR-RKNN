@@ -150,7 +150,8 @@ class TDNNASR(nn.Module):
                 if idx == 0:
                     token = ""
                 else:
-                    token = self.vocab_data["id_to_token"].get(str(idx + 1), "")
+                    token_id = idx - 1
+                    token = self.vocab_data["id_to_token"].get(str(token_id), "")
 
                 if token != prev_token:
                     sentence += token
