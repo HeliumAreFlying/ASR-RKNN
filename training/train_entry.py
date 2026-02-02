@@ -46,6 +46,7 @@ class AudioDataset(Dataset):
             samples, sr = load_and_resample_audio(wav_path)
             feats = compute_feat(samples, sample_rate=16000, window_size=7, window_shift=1)
             feats = torch.from_numpy(feats).float()
+            feat_len = feats.size(0)
 
             label_ids = []
             for char in text:
@@ -54,21 +55,22 @@ class AudioDataset(Dataset):
                     label_ids.append(token_id + 1)
 
             label_tensor = torch.tensor(label_ids, dtype=torch.long)
-            return feats, label_tensor
+            return feats, label_tensor, feat_len
 
         except Exception as e:
             print(f"Error loading {wav_path}: {e}")
-            return None, None
+            return None, None, None
 
 
 def collate_fn(batch):
-    batch = [(f, l) for f, l in batch if f is not None]
+    batch = [(f, l, fl) for f, l, fl in batch if f is not None and l is not None and len(l) > 0]
     if not batch:
-        return None, None
-    feats, labels = zip(*batch)
+        return None, None, None
+    feats, labels, feat_lens = zip(*batch)
     padded_feats = pad_sequence(feats, batch_first=True)
     padded_labels = pad_sequence(labels, batch_first=True, padding_value=0)
-    return padded_feats, padded_labels
+    feat_lens = torch.tensor(feat_lens, dtype=torch.long)
+    return padded_feats, padded_labels, feat_lens
 
 
 def train():
@@ -99,16 +101,17 @@ def train():
     scaler = GradScaler()
 
     best_val_loss = float('inf')
+    reduction = model.reduction
 
     for epoch in range(NUM_EPOCHS):
         model.train()
         total_loss = 0.0
 
         for batch_idx, batch in enumerate(train_loader):
-            if batch is None:
+            if batch is None or batch[0] is None:
                 continue
-            x, y = batch
-            x, y = x.to(DEVICE), y.to(DEVICE)
+            x, y, feat_lens = batch
+            x, y, feat_lens = x.to(DEVICE), y.to(DEVICE), feat_lens.to(DEVICE)
             x = x.transpose(1, 2).unsqueeze(-1)
 
             optimizer.zero_grad()
@@ -118,11 +121,10 @@ def train():
                 out = out.squeeze(-1).transpose(1, 2)
                 log_probs = torch.nn.functional.log_softmax(out, dim=-1).transpose(0, 1)
 
-                input_lengths = torch.full((x.size(0),), out.size(1), dtype=torch.long).to(DEVICE)
-                target_lengths = (y != 0).sum(dim=1).clamp(min=1)
+                output_lengths = (feat_lens + reduction - 1) // reduction
+                target_lengths = (y != 0).sum(dim=1)
 
-                loss = nn.CTCLoss(blank=0, reduction='mean', zero_infinity=True)(log_probs, y, input_lengths,
-                                                                                 target_lengths)
+                loss = nn.CTCLoss(blank=0, reduction='mean', zero_infinity=True)(log_probs, y, output_lengths, target_lengths)
 
             scaler.scale(loss).backward()
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=5.0)
@@ -137,20 +139,21 @@ def train():
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for x, y in val_loader:
-                if x is None:
+            for batch in val_loader:
+                if batch is None or batch[0] is None:
                     continue
-                x, y = x.to(DEVICE), y.to(DEVICE)
+                x, y, feat_lens = batch
+                x, y, feat_lens = x.to(DEVICE), y.to(DEVICE), feat_lens.to(DEVICE)
                 x = x.transpose(1, 2).unsqueeze(-1)
 
                 out = model(x)
                 out = out.squeeze(-1).transpose(1, 2)
                 log_probs = torch.nn.functional.log_softmax(out, dim=-1).transpose(0, 1)
 
-                input_lengths = torch.full((x.size(0),), out.size(1), dtype=torch.long).to(DEVICE)
-                target_lengths = (y != 0).sum(dim=1).clamp(min=1)
+                output_lengths = (feat_lens + reduction - 1) // reduction
+                target_lengths = (y != 0).sum(dim=1)
 
-                loss = nn.CTCLoss(blank=0, reduction='mean')(log_probs, y, input_lengths, target_lengths)
+                loss = nn.CTCLoss(blank=0, reduction='mean', zero_infinity=True)(log_probs, y, output_lengths, target_lengths)
                 val_loss += loss.item()
 
         avg_val_loss = val_loss / len(val_loader)
