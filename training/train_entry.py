@@ -104,7 +104,7 @@ def train():
         vocab_data=dataset.vocab
     ).to(public_device)
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
+    optimizer = torch.optim.RAdam(model.parameters(), lr=LEARNING_RATE)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
     scaler = GradScaler()
 
