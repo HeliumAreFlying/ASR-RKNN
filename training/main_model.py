@@ -96,7 +96,7 @@ class TDNNASR(nn.Module):
 
     def forward_wave(self, wave_filepath, need_sentence):
         samples, sr = load_and_resample_audio(wave_filepath)
-        feats = compute_feat(samples, sample_rate=16000, window_size=7, window_shift=1)
+        feats = compute_feat(samples, sample_rate=16000, window_size=1, window_shift=1)
         feats = torch.from_numpy(feats).float().to(public_device)
         total_frames = feats.size(0)
         num_classes = self.output_layer[-1].out_channels
@@ -169,11 +169,11 @@ if __name__ == "__main__":
     vocab_data = json.load(open(r"basic_data/vocab_data.json"))
 
     model = TDNNASR(
-        input_dim=560,
-        block_dims=[512] * 9,
-        dilations=[1, 2, 4, 2, 1, 2, 4, 2, 1],
-        strides=[1, 1, 1, 1, 1, 1, 1, 1, 2],
-        proj_dim=128,
+        input_dim=80,
+        block_dims=[256] * 13,
+        dilations=[1, 2, 4, 4, 4, 2, 1, 2, 4, 4, 4, 2, 1],
+        strides=[1] * 12 + [2],
+        proj_dim=256,
         num_classes=vocab_data['vocab_size'] + 1,
         vocab_data=vocab_data,
         max_window_size=512,
@@ -186,7 +186,7 @@ if __name__ == "__main__":
 
     summary(
         model,
-        input_size=(1, 560, 512, 1),
+        input_size=(1, 80, 512, 1),
         device=public_device,
         dtypes=[torch.float32],
         col_names=["input_size", "output_size", "num_params", "mult_adds"]

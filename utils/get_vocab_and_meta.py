@@ -85,7 +85,7 @@ def check_zh_vocab_data(vocab_dir="vocab_data.json"):
 
 if __name__ == "__main__":
     vocab_data_dump_dir = "../basic_data/vocab_data.json"
-    meta_data_dir = r"D:\zhvoice\metadata.csv"
+    meta_data_dir = r"C:\Files\TrainingDatas\zhvoice\metadata.csv"
     clean_meta_data_dump_dir = "../basic_data/clean_meta_data.json"
     get_zh_vocab(meta_data_dir=meta_data_dir,
                  vocab_data_dump_dir=vocab_data_dump_dir)

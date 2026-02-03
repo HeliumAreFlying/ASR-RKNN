@@ -52,6 +52,6 @@ def compute_feat(samples: np.ndarray, sample_rate: int, window_size: int, window
 if __name__ == "__main__":
     wave_filepath = "examples/zh.wav"
     samples, sr = load_and_resample_audio(wave_filepath)
-    feats = compute_feat(samples, sample_rate=16000, window_size=7, window_shift=1)
+    feats = compute_feat(samples, sample_rate=16000, window_size=1, window_shift=1)
     print(feats.shape)
 

@@ -46,7 +46,7 @@ class AudioDataset(Dataset):
 
         try:
             samples, sr = load_and_resample_audio(wav_path)
-            feats = compute_feat(samples, sample_rate=16000, window_size=7, window_shift=1)
+            feats = compute_feat(samples, sample_rate=16000, window_size=1, window_shift=1)
             feats = torch.from_numpy(feats).float()
             feat_len = feats.size(0)
 
@@ -86,14 +86,14 @@ def train():
     num_classes = vocab_size + 1
 
     model = TDNNASR(
-        input_dim=560,
-        block_dims=[512] * 9,
-        dilations=[1, 2, 4, 2, 1, 2, 4, 2, 1],
-        strides=[1, 1, 1, 1, 1, 1, 1, 1, 2],
-        proj_dim=128,
+        input_dim=80,
+        block_dims=[256] * 13,
+        dilations=[1, 2, 4, 4, 4, 2, 1, 2, 4, 4, 4, 2, 1],
+        strides=[1] * 12 + [2],
+        proj_dim=256,
         num_classes=num_classes,
         vocab_data=dataset.vocab
-    ).to(DEVICE)
+    ).to(public_device)
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=LEARNING_RATE)
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
