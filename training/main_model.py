@@ -1,4 +1,6 @@
 import json
+import os.path
+
 import torch
 import torch.nn as nn
 import numpy as np
@@ -170,6 +172,9 @@ if __name__ == "__main__":
         max_window_size=512,
         max_window_shift=384
     ).to(public_device)
+
+    if os.path.exists("weights/best.pth"):
+        model.load_state_dict(torch.load("weights/best.pth", map_location=public_device, weights_only=True))
 
     summary(
         model,
