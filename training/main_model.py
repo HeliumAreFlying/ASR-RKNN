@@ -139,10 +139,7 @@ class TDNNASR(nn.Module):
         if need_sentence:
             assert self.vocab_data is not None, "vocab_data must not be None"
 
-            logits_for_decode = final_output.clone()
-            logits_for_decode[:, 0] = -128
-
-            predicted_ids = torch.argmax(logits_for_decode, dim=-1).cpu().numpy()
+            predicted_ids = torch.argmax(final_output, dim=-1).cpu().numpy()
 
             sentence = ""
             prev_token = None
