@@ -1,6 +1,8 @@
-import json
-import os.path
+import os
+import sys
+sys.path.append(".")
 
+import json
 import torch
 import torch.nn as nn
 import numpy as np
@@ -175,6 +177,7 @@ if __name__ == "__main__":
 
     if os.path.exists("weights/best.pth"):
         model.load_state_dict(torch.load("weights/best.pth", map_location=public_device, weights_only=True))
+        print("best.pth was found and loaded")
 
     summary(
         model,
@@ -184,6 +187,6 @@ if __name__ == "__main__":
         col_names=["input_size", "output_size", "num_params", "mult_adds"]
     )
 
-    final_output, sentence = model.forward_wave(wave_filepath=r"examples/en.wav", need_sentence=True)
+    final_output, sentence = model.forward_wave(wave_filepath=r"examples/zh.wav", need_sentence=True)
     print(final_output.size())
     print(len(sentence),sentence[:16])
