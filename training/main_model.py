@@ -96,7 +96,7 @@ class TDNNASR(nn.Module):
 
     def forward_wave(self, wave_filepath, need_sentence):
         samples, sr = load_and_resample_audio(wave_filepath)
-        feats = compute_feat(samples, sample_rate=16000, window_size=1, window_shift=1)
+        feats = compute_feat(samples, sample_rate=16000)
         feats = torch.from_numpy(feats).float().to(public_device)
         total_frames = feats.size(0)
         num_classes = self.output_layer[-1].out_channels

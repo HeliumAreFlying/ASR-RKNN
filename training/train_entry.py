@@ -46,7 +46,7 @@ class AudioDataset(Dataset):
 
         try:
             samples, sr = load_and_resample_audio(wav_path)
-            feats = compute_feat(samples, sample_rate=16000, window_size=1, window_shift=1)
+            feats = compute_feat(samples, sample_rate=16000)
             feats = torch.from_numpy(feats).float()
             feat_len = feats.size(0)
 
