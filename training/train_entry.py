@@ -13,7 +13,7 @@ sys.path.append(str(Path(__file__).parent.parent))
 from main_model import TDNNASR, public_device
 from utils.get_feat import load_and_resample_audio, compute_feat
 
-TRAINING_DATA_ROOT = "D:/zhvoice"
+TRAINING_DATA_ROOT = "../datasets/zhvoice"
 BATCH_SIZE = 64
 LEARNING_RATE = 1e-3
 NUM_EPOCHS = 10000
