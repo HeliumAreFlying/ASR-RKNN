@@ -7,6 +7,7 @@ from torch.amp import GradScaler
 from torch.nn.utils.rnn import pad_sequence
 from pathlib import Path
 import sys
+from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent))
 from main_model import TDNNASR, public_device
@@ -20,9 +21,10 @@ VAL_SPLIT = 0.1
 SAVE_DIR = "weights"
 LOG_STEP = 10
 DEVICE = public_device
+TB_LOG_DIR = "tb_logs"
 
 os.makedirs(SAVE_DIR, exist_ok=True)
-
+os.makedirs(TB_LOG_DIR, exist_ok=True)
 
 class AudioDataset(Dataset):
     def __init__(self, meta_file, vocab_file):
@@ -58,9 +60,7 @@ class AudioDataset(Dataset):
             return feats, label_tensor, feat_len
 
         except Exception as e:
-            print(f"Error loading {wav_path}: {e}")
             return None, None, None
-
 
 def collate_fn(batch):
     batch = [(f, l, fl) for f, l, fl in batch if f is not None and l is not None and len(l) > 0]
@@ -71,7 +71,6 @@ def collate_fn(batch):
     padded_labels = pad_sequence(labels, batch_first=True, padding_value=0)
     feat_lens = torch.tensor(feat_lens, dtype=torch.long)
     return padded_feats, padded_labels, feat_lens
-
 
 def train():
     dataset = AudioDataset('basic_data/clean_meta_data.json', 'basic_data/vocab_data.json')
@@ -102,6 +101,8 @@ def train():
 
     best_val_loss = float('inf')
     reduction = model.reduction
+    writer = SummaryWriter(TB_LOG_DIR)
+    global_step = 0
 
     for epoch in range(NUM_EPOCHS):
         model.train()
@@ -132,9 +133,13 @@ def train():
             scaler.update()
 
             total_loss += loss.item()
+            global_step += 1
 
             if (batch_idx + 1) % LOG_STEP == 0:
-                print(f"Epoch [{epoch + 1}/{NUM_EPOCHS}], Step [{batch_idx + 1}], Train Loss: {loss.item():.4f}")
+                writer.add_scalar('Train/Step_Loss', loss.item(), global_step)
+
+        avg_train_loss = total_loss / len(train_loader)
+        writer.add_scalar('Train/Epoch_Avg_Loss', avg_train_loss, epoch)
 
         model.eval()
         val_loss = 0.0
@@ -157,17 +162,18 @@ def train():
                 val_loss += loss.item()
 
         avg_val_loss = val_loss / len(val_loader)
-        print(f"Validation Loss: {avg_val_loss:.4f}")
+        writer.add_scalar('Val/Epoch_Avg_Loss', avg_val_loss, epoch)
+        writer.add_scalar('Train/Learning_Rate', optimizer.param_groups[0]['lr'], epoch)
 
         scheduler.step(avg_val_loss)
 
         if avg_val_loss < best_val_loss:
             best_val_loss = avg_val_loss
             torch.save(model.state_dict(), os.path.join(SAVE_DIR, 'best.pth'))
-            print(f"Saved Best Model (Val Loss: {avg_val_loss:.4f})")
 
         torch.save(model.state_dict(), os.path.join(SAVE_DIR, 'last.pth'))
 
+    writer.close()
 
 if __name__ == "__main__":
     train()
