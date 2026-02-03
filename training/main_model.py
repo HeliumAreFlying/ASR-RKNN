@@ -167,10 +167,10 @@ if __name__ == "__main__":
 
     model = TDNNASR(
         input_dim=80,
-        block_dims=[256] * 13,
+        block_dims=[384] * 13,
         dilations=[1, 2, 4, 4, 4, 2, 1, 2, 4, 4, 4, 2, 1],
         strides=[1] * 12 + [2],
-        proj_dim=256,
+        proj_dim=384,
         num_classes=vocab_data['vocab_size'] + 1,
         vocab_data=vocab_data,
         max_window_size=512,
