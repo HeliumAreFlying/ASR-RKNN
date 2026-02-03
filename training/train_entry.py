@@ -79,8 +79,17 @@ def train():
     train_size = len(dataset) - val_size
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True, collate_fn=collate_fn, drop_last=True)
-    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False, collate_fn=collate_fn)
+    train_loader = DataLoader(train_dataset,
+                              num_workers=10,
+                              batch_size=BATCH_SIZE,
+                              shuffle=True,
+                              collate_fn=collate_fn,
+                              drop_last=True)
+    val_loader = DataLoader(val_dataset,
+                            num_workers=10,
+                            batch_size=BATCH_SIZE,
+                            shuffle=False,
+                            collate_fn=collate_fn)
 
     vocab_size = dataset.vocab['vocab_size']
     num_classes = vocab_size + 1
