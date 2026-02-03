@@ -31,7 +31,12 @@ def compute_feat(samples: np.ndarray, sample_rate: int, window_size: int, window
     if online_fbank.num_frames_ready == 0:
         return np.zeros((0, 80 * window_size), dtype=np.float32)
 
-    features = np.stack([online_fbank.get_frame(i) for i in range(online_fbank.num_frames_ready)])  # [F,80]
+    features = np.stack([online_fbank.get_frame(i) for i in range(online_fbank.num_frames_ready)])
+
+    if features.shape[0] > 1:
+        mean = np.mean(features, axis=0, keepdims=True)
+        std = np.std(features, axis=0, keepdims=True)
+        features = (features - mean) / (std + 1e-8)
 
     T = (features.shape[0] - window_size) // window_shift + 1
     if T <= 0:
