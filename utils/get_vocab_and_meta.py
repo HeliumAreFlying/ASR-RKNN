@@ -1,5 +1,8 @@
 import json
 
+def is_chinese_char(c):
+    return '\u4e00' <= c <= '\u9fff'
+
 def get_zh_vocab(meta_data_dir,vocab_data_dump_dir="vocab_data.json"):
     vocab_data = {
         "tokens" : dict(),
@@ -13,6 +16,8 @@ def get_zh_vocab(meta_data_dir,vocab_data_dump_dir="vocab_data.json"):
             label_str = split_units[-1].replace(" ", "")
             labels = list(label_str)
             for label in labels:
+                if not is_chinese_char(label):
+                    continue
                 vocab_data["tokens"][label] = vocab_data["tokens"].get(label, 0) + 1
                 vocab_data["total_frequency"] += 1
     with open(vocab_data_dump_dir, "w", encoding="utf-8") as w:
@@ -33,6 +38,8 @@ def get_clean_zh_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_da
             labels = list(label_str)
             skip = False
             for label in labels:
+                if not is_chinese_char(label):
+                    continue
                 frequency = vocab_data["tokens"][label]
                 if frequency < skip_threshold:
                     skip = True
