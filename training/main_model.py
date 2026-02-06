@@ -72,6 +72,10 @@ class TDNNASR(nn.Module):
 
         assert len(block_dims) == len(dilations) == len(strides), "block_dims, dilations and strides must have same length"
 
+        self.block_dims = block_dims
+        self.dilations = dilations
+        self.strides = strides
+
         self.vocab_data = vocab_data
         self.reduction = int(np.prod(strides))
         self.max_window_size = max_window_size
@@ -98,6 +102,18 @@ class TDNNASR(nn.Module):
             nn.ReLU(),
             nn.Conv2d(proj_dim, num_classes, kernel_size=(1, 1))
         )
+
+        self.receptive_field = self.compute_receptive_field_frames()
+
+    def compute_receptive_field_frames(self):
+        if self.block_dims is None or self.dilations is None or self.strides is None:
+            raise ValueError("block_dims, dilations, and strides must be provided")
+        receptive_field = 1
+        total_stride = 1
+        for d, s in zip(self.dilations, self.strides):
+            receptive_field += 2 * d * total_stride
+            total_stride *= s
+        return receptive_field
 
     def forward(self, x):
         x = self.proj(x)
@@ -178,15 +194,17 @@ if __name__ == "__main__":
 
     model = TDNNASR(
         input_dim=80,
-        block_dims=[512] * 18,
-        dilations=[1,2,4,4,2,1] * 3,
-        strides=[1,1,1] * 2 + [1,1,2] * 4,
-        proj_dim=512,
+        block_dims=[128] * 150,
+        dilations=[1,2,4] * 50,
+        strides=[2] * 2 + [1] * 148,
+        proj_dim=128,
         num_classes=vocab_data['vocab_size'] + 1,
         vocab_data=vocab_data,
-        max_window_size=512,
+        max_window_size=8192,
         max_window_shift=384
     ).to(public_device)
+
+    print("the receptive field of model is {}".format(model.receptive_field))
 
     if os.path.exists("weights/best.pth"):
         model.load_state_dict(torch.load("weights/best.pth", map_location=public_device, weights_only=True))
@@ -202,4 +220,4 @@ if __name__ == "__main__":
 
     final_output, sentence = model.forward_wave(wave_filepath=r"examples/zh.wav", need_sentence=True)
     print(final_output.size())
-    print(len(sentence),sentence[:16])
+    print(sentence)
