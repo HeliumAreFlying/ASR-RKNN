@@ -1,12 +1,13 @@
 import os
+import sys
 import json
+import editdistance
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader, random_split
 from torch.amp import GradScaler
 from torch.nn.utils.rnn import pad_sequence
 from pathlib import Path
-import sys
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent))
@@ -75,6 +76,21 @@ def collate_fn(batch):
     feat_lens = torch.tensor(feat_lens, dtype=torch.long)
     return padded_feats, padded_labels, feat_lens
 
+def compute_cer(pred_ids, target_ids):
+    total_edits = 0
+    total_chars = 0
+
+    for p, t in zip(pred_ids, target_ids):
+        p_decoded = [p[i] for i in range(len(p)) if p[i] != 0 and (i == 0 or p[i] != p[i - 1])]
+        t_clean = [token for token in t if token != 0]
+
+        total_edits += editdistance.eval(p_decoded, t_clean)
+        total_chars += len(t_clean)
+
+    if total_chars == 0:
+        return float('inf')
+    return total_edits / total_chars
+
 def train():
     dataset = AudioDataset(META_DIR, VOCAB_DIR)
 
@@ -113,7 +129,8 @@ def train():
     scheduler = torch.optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.5, patience=2)
     scaler = GradScaler()
 
-    best_val_loss = float('inf')
+    best_cer = float('inf')
+
     reduction = model.reduction
     writer = SummaryWriter(TB_LOG_DIR)
     global_step = 0
@@ -157,6 +174,9 @@ def train():
 
         model.eval()
         val_loss = 0.0
+        all_preds = []
+        all_targets = []
+
         with torch.no_grad():
             for batch in val_loader:
                 if batch is None or batch[0] is None:
@@ -172,17 +192,30 @@ def train():
                 output_lengths = (feat_lens + reduction - 1) // reduction
                 target_lengths = (y != 0).sum(dim=1)
 
-                loss = nn.CTCLoss(blank=0, reduction='mean', zero_infinity=True)(log_probs, y, output_lengths, target_lengths)
+                loss = nn.CTCLoss(blank=0, reduction='mean', zero_infinity=True)(
+                    log_probs, y, output_lengths, target_lengths
+                )
                 val_loss += loss.item()
 
+                preds = torch.argmax(out, dim=-1)
+
+                for i in range(preds.size(0)):
+                    pred_seq = preds[i][:output_lengths[i]].cpu().tolist()
+                    target_seq = y[i][:target_lengths[i]].cpu().tolist()
+                    all_preds.append(pred_seq)
+                    all_targets.append(target_seq)
+
         avg_val_loss = val_loss / len(val_loader)
+        cer = compute_cer(all_preds, all_targets)
+
         writer.add_scalar('Val/Epoch_Avg_Loss', avg_val_loss, epoch)
+        writer.add_scalar('Val/CER', cer, epoch)
         writer.add_scalar('Train/Learning_Rate', optimizer.param_groups[0]['lr'], epoch)
 
         scheduler.step(avg_val_loss)
 
-        if avg_val_loss < best_val_loss:
-            best_val_loss = avg_val_loss
+        if cer != float('inf') and cer < best_cer:
+            best_cer = cer
             torch.save(model.state_dict(), os.path.join(SAVE_DIR, 'best.pth'))
 
         torch.save(model.state_dict(), os.path.join(SAVE_DIR, 'last.pth'))
