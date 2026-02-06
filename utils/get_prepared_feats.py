@@ -10,7 +10,7 @@ from utils.get_feat import load_and_resample_audio, compute_feat
 
 TRAINING_DATA_ROOT = "../datasets/zhvoice"
 META_FILE = "basic_data/clean_meta_data.json"
-FEAT_SAVE_DIR = "basic_data//zhvoice_feats"
+FEAT_SAVE_DIR = "basic_data/zhvoice_feats"
 NUM_PROCESSES = 12
 
 
