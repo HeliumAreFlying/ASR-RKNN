@@ -5,9 +5,9 @@ from tqdm import tqdm
 from concurrent.futures import ProcessPoolExecutor
 from utils.get_feat import load_and_resample_audio, compute_feat
 
-TRAINING_DATA_ROOT = "../../datasets/zhvoice"
-META_FILE = "../basic_data/clean_meta_data.json"
-FEAT_SAVE_DIR = "../datasets/zhvoice_feats"
+TRAINING_DATA_ROOT = "../datasets/zhvoice"
+META_FILE = "basic_data/clean_meta_data.json"
+FEAT_SAVE_DIR = "basic_data//zhvoice_feats"
 NUM_PROCESSES = 12
 
 
@@ -46,5 +46,5 @@ if __name__ == "__main__":
             orig_rel_path, feat_rel_path = res
             new_meta_data[feat_rel_path] = meta_data[orig_rel_path]
 
-    with open("../basic_data/feat_meta_data.json", 'w', encoding='utf-8') as f:
+    with open("basic_data/feat_meta_data.json", 'w', encoding='utf-8') as f:
         json.dump(new_meta_data, f, ensure_ascii=False, indent=4)
