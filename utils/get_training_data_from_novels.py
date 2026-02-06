@@ -2,6 +2,7 @@ import os
 import re
 import comtypes.client
 
+ROOT_DIR = 'basic_data'
 INPUT_DIR = r'C:\Users\Administrator\Documents\xwechat_files\wxid_8ly89bpuixxa22_6c25\msg\file\2026-01'
 OUTPUT_DIR = 'basic_data/generated_training_data/waves'
 CSV_METADATA = 'basic_data/generated_training_data/metadata.csv'
@@ -33,7 +34,8 @@ def prepare_raw_dataset():
 
     with open(CSV_METADATA, 'w', encoding='utf-8') as f:
         for audio_path, pure_text in tasks:
-            f.write(f"{audio_path}{pure_text}\n")
+            audio_rel_path = os.path.relpath(audio_path, ROOT_DIR)
+            f.write(f"{audio_rel_path}\t{pure_text}\n")
 
     speak = comtypes.client.CreateObject("Sapi.SpVoice")
     filestream = comtypes.client.CreateObject("Sapi.SpFileStream")
