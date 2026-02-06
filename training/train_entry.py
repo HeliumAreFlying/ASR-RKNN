@@ -113,7 +113,6 @@ def train():
                             pin_memory=torch.cuda.is_available())
 
     vocab_size = dataset.vocab['vocab_size']
-    num_classes = vocab_size + 1
 
     model = TDNNASR(
         input_dim=80,
@@ -121,7 +120,7 @@ def train():
         dilations=[1,2,4] * 12,
         strides=[2] * 2 + [1] * 34,
         proj_dim=512,
-        num_classes=num_classes,
+        num_classes=vocab_size,
         vocab_data=dataset.vocab
     ).to(public_device)
 

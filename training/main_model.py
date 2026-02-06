@@ -52,9 +52,7 @@ class TDNNASR(nn.Module):
             strides: List[int] = None,
             proj_dim: int = 128,
             num_classes: int = 409,
-            vocab_data: dict = None,
-            max_window_size: int = 512,
-            max_window_shift: int = 384
+            vocab_data: dict = None
     ):
         super().__init__()
 
@@ -68,8 +66,6 @@ class TDNNASR(nn.Module):
 
         self.vocab_data = vocab_data
         self.reduction = int(np.prod(strides))
-        self.max_window_size = max_window_size
-        self.max_window_shift = max_window_shift
 
         first_dim = block_dims[0]
         self.proj = nn.Sequential(
@@ -114,52 +110,13 @@ class TDNNASR(nn.Module):
     def forward_wave(self, wave_filepath, need_sentence):
         samples, sr = load_and_resample_audio(wave_filepath)
         feats = compute_feat(samples, sample_rate=16000)
+
         feats = torch.from_numpy(feats).float().to(public_device)
-        total_frames = feats.size(0)
-        num_classes = self.output_layer[-1].out_channels
-
-        total_out_frames = (total_frames + self.reduction - 1) // self.reduction
-        final_output = torch.zeros(total_out_frames, num_classes, device=public_device)
-
-        start_idx = 0
-        batch_inputs = []
-        batch_starts = []
+        feats = feats.unsqueeze(0).unsqueeze(-1).transpose(1, 2)
 
         with torch.no_grad():
-            while start_idx < total_frames:
-                end_idx = min(start_idx + self.max_window_size, total_frames)
-                chunk = feats[start_idx:end_idx]
-                current_length = chunk.size(0)
-
-                if current_length < self.max_window_size:
-                    pad_size = self.max_window_size - current_length
-                    pad_tensor = torch.zeros(pad_size, feats.size(1), device=public_device)
-                    chunk = torch.cat([chunk, pad_tensor], dim=0)
-
-                batch_inputs.append(chunk)
-                batch_starts.append(start_idx)
-                start_idx += self.max_window_shift
-
-            batch_tensor = torch.stack(batch_inputs, dim=0)
-            batch_tensor = batch_tensor.unsqueeze(-1).transpose(1, 2)
-            batch_results = self.forward(batch_tensor)
-            batch_results = batch_results.squeeze(-1).transpose(1, 2)
-
-            for i, start_pos in enumerate(batch_starts):
-                result_chunk = batch_results[i]
-
-                actual_chunk_len = min(self.max_window_size, total_frames - start_pos)
-                output_chunk_len = actual_chunk_len // self.reduction
-
-                out_start = start_pos // self.reduction
-                out_end = out_start + output_chunk_len
-
-                if out_end > final_output.size(0):
-                    out_end = final_output.size(0)
-                    output_chunk_len = out_end - out_start
-
-                if output_chunk_len > 0:
-                    final_output[out_start:out_end] = result_chunk[:output_chunk_len]
+            batch_results = self.forward(feats)
+            final_output = batch_results.squeeze(0).squeeze(-1).transpose(0, 1)
 
         sentence = None
         if need_sentence:
@@ -188,10 +145,8 @@ if __name__ == "__main__":
         dilations=[1,2,4] * 12,
         strides=[2] * 2 + [1] * 34,
         proj_dim=512,
-        num_classes=vocab_data['vocab_size'] + 1,
-        vocab_data=vocab_data,
-        max_window_size=8192,
-        max_window_shift=384
+        num_classes=vocab_data['vocab_size'],
+        vocab_data=vocab_data
     ).to(public_device)
 
     print("the receptive field of model is {}".format(model.receptive_field))

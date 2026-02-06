@@ -32,8 +32,14 @@ def compute_feat(samples: np.ndarray, sample_rate: int) -> np.ndarray:
     if fbank.num_frames_ready == 0:
         return np.zeros((0, 80), dtype=np.float32)
 
-    features = np.stack([fbank.get_frame(i) for i in range(fbank.num_frames_ready)])
-    features = features - np.mean(features, axis=0, keepdims=True)
+    features = np.zeros((fbank.num_frames_ready, 80), dtype=np.float32)
+    for i in range(fbank.num_frames_ready):
+        features[i] = fbank.get_frame(i)
+
+    mean = np.mean(features, axis=0)
+    std = np.std(features, axis=0) + 1e-8
+    features = (features - mean) / std
+
     return np.ascontiguousarray(features, dtype=np.float32)
 
 if __name__ == "__main__":
