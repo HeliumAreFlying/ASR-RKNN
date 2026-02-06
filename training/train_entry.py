@@ -39,6 +39,7 @@ class AudioDataset(Dataset):
             self.vocab = json.load(f)
 
         self.token_to_id = self.vocab['token_to_id']
+        self.id_to_token = self.vocab['id_to_token']
 
     def __len__(self):
         return len(self.items)
