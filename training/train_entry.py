@@ -111,8 +111,11 @@ def train():
                             collate_fn=collate_fn, pin_memory=True)
 
     model = TDNNASR(
-        input_dim=80, block_dims=[512] * 36, dilations=[1, 2, 4] * 12,
-        strides=[2] * 2 + [1] * 34, proj_dim=512,
+        input_dim=80,
+        block_dims=[256] * 8 + [384] * 8 + [512] * 12,
+        dilations=[1, 2, 4] * 9 + [1],
+        strides=[2] + [1] * 8 + [2] + [1] * 18,
+        proj_dim=512,
         num_classes=full_dataset.vocab['vocab_size'], vocab_data=full_dataset.vocab
     ).to(DEVICE)
 
