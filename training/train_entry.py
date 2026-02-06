@@ -14,7 +14,7 @@ from torch.utils.tensorboard import SummaryWriter
 sys.path.append(str(Path(__file__).parent.parent))
 from main_model import TDNNASR, public_device
 
-FEAT_ROOT = "../datasets/zhvoice_feats"
+FEAT_ROOT = "basic_data/zhvoice_feats"
 META_DIR = "basic_data/feat_meta_data.json"
 VOCAB_DIR = "basic_data/vocab_data.json"
 SAVE_DIR = "weights"
