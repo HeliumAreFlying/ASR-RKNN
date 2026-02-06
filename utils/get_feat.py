@@ -18,7 +18,7 @@ def load_and_resample_audio(filename: str, target_sr: int = 16000) -> Tuple[np.n
 
 def compute_feat(samples: np.ndarray, sample_rate: int) -> np.ndarray:
     opts = knf.FbankOptions()
-    opts.frame_opts.dither = 0.0
+    opts.frame_opts.dither = 1.0
     opts.frame_opts.snip_edges = False
     opts.frame_opts.window_type = "hamming"
     opts.frame_opts.samp_freq = sample_rate
