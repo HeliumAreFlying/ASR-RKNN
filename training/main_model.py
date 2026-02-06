@@ -194,10 +194,10 @@ if __name__ == "__main__":
 
     model = TDNNASR(
         input_dim=80,
-        block_dims=[128] * 150,
-        dilations=[1,2,4] * 50,
-        strides=[2] * 2 + [1] * 148,
-        proj_dim=128,
+        block_dims=[512] * 36,
+        dilations=[1,2,4] * 12,
+        strides=[2] * 2 + [1] * 34,
+        proj_dim=512,
         num_classes=vocab_data['vocab_size'] + 1,
         vocab_data=vocab_data,
         max_window_size=8192,
