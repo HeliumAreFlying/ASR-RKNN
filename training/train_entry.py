@@ -57,8 +57,7 @@ class AudioDataset(Dataset):
             label_ids = []
             for char in text:
                 if char in self.token_to_id:
-                    token_id = self.token_to_id[char]
-                    label_ids.append(token_id + 1)
+                    label_ids.append(self.token_to_id[char])
 
             label_tensor = torch.tensor(label_ids, dtype=torch.long)
             return feats, label_tensor, feat_len
