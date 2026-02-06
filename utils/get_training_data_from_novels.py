@@ -1,6 +1,6 @@
 import os
 import re
-import pyttsx3
+import comtypes.client
 
 INPUT_DIR = r'C:\Users\Administrator\Documents\xwechat_files\wxid_8ly89bpuixxa22_6c25\msg\file\2026-01'
 OUTPUT_DIR = 'basic_data/generated_training_data/waves'
@@ -17,36 +17,35 @@ def prepare_raw_dataset():
     if not os.path.exists(OUTPUT_DIR):
         os.makedirs(OUTPUT_DIR)
 
-    engine = pyttsx3.init()
-    engine.setProperty('rate', 180)
-
+    tasks = []
     file_count = 0
+    for root, _, files in os.walk(INPUT_DIR):
+        for file in files:
+            if not file.endswith('.txt'): continue
+            with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as txt_f:
+                lines = re.split(r'[，。！？\n\r]', txt_f.read())
+                for line in lines:
+                    pure_text = get_pure_chinese(line)
+                    if MIN_LEN <= len(pure_text) <= MAX_LEN:
+                        audio_path = os.path.abspath(os.path.join(OUTPUT_DIR, f"voc_{file_count:06d}.wav"))
+                        tasks.append((audio_path, pure_text))
+                        file_count += 1
+
     with open(CSV_METADATA, 'w', encoding='utf-8') as f:
-        for root, _, files in os.walk(INPUT_DIR):
-            for file in files:
-                if not file.endswith('.txt'): continue
+        for audio_path, pure_text in tasks:
+            f.write(f"{audio_path}\t{pure_text}\n")
 
-                with open(os.path.join(root, file), 'r', encoding='utf-8', errors='ignore') as txt_f:
-                    content = txt_f.read()
-                    lines = re.split(r'[，。！？\n\r]', content)
+    speak = comtypes.client.CreateObject("Sapi.SpVoice")
+    filestream = comtypes.client.CreateObject("Sapi.SpFileStream")
 
-                    for line in lines:
-                        pure_text = get_pure_chinese(line)
-                        if MIN_LEN <= len(pure_text) <= MAX_LEN:
-                            audio_name = f"voc_{file_count:06d}.wav"
-                            audio_path = os.path.join(OUTPUT_DIR, audio_name)
-
-                            engine.save_to_file(pure_text, audio_path)
-                            f.write(f"{audio_path}\t{pure_text}\n")
-                            file_count += 1
-
-                            if file_count % 100 == 0:
-                                engine.runAndWait()
-                                print(f"Progress: {file_count}")
-
-        engine.runAndWait()
-
-    print(f"Done. Total: {file_count}")
+    total = len(tasks)
+    for idx, (audio_path, pure_text) in enumerate(tasks):
+        filestream.Open(audio_path, 3, False)
+        speak.AudioOutputStream = filestream
+        speak.Speak(pure_text)
+        filestream.Close()
+        if (idx + 1) % 50 == 0:
+            print(f"Fast Exporting: {idx + 1} / {total}")
 
 
 if __name__ == "__main__":
