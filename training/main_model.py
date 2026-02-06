@@ -165,7 +165,7 @@ class TDNNASR(nn.Module):
                 if idx == 0:
                     prev_token = None
                     continue
-                token = self.vocab_data["id_to_token"].get(str(idx - 1), "")
+                token = self.vocab_data["id_to_token"].get(str(idx), "")
                 if token != prev_token:
                     tokens.append(token)
                     prev_token = token

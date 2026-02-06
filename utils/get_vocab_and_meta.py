@@ -49,6 +49,7 @@ def get_clean_zh_vocab_and_meta_data(meta_data_dir,vocab_data_dump_dir="vocab_da
 
     tokens = list(vocab_data["tokens"].keys())
     tokens.sort(key = lambda x: vocab_data["tokens"][x], reverse = True)
+    tokens = [""] + tokens
     token_to_id = dict(zip(tokens, range(len(tokens))))
     id_to_token = dict(zip(range(len(tokens)), tokens))
 

@@ -17,11 +17,14 @@ TRAINING_DATA_ROOT = "../datasets/zhvoice"
 BATCH_SIZE = 64
 LEARNING_RATE = 1e-3
 NUM_EPOCHS = 10000
-VAL_SPLIT = 0.1
+VAL_SPLIT = 0.01
 SAVE_DIR = "weights"
 LOG_STEP = 10
 DEVICE = public_device
 TB_LOG_DIR = "tb_logs"
+META_DIR = "basic_data/clean_meta_data.json"
+VOCAB_DIR = "basic_data/vocab_data.json"
+
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(TB_LOG_DIR, exist_ok=True)
@@ -73,7 +76,7 @@ def collate_fn(batch):
     return padded_feats, padded_labels, feat_lens
 
 def train():
-    dataset = AudioDataset('basic_data/clean_meta_data.json', 'basic_data/vocab_data.json')
+    dataset = AudioDataset(META_DIR, VOCAB_DIR)
 
     val_size = int(len(dataset) * VAL_SPLIT)
     train_size = len(dataset) - val_size
