@@ -117,9 +117,9 @@ def train():
 
     model = TDNNASR(
         input_dim=80,
-        block_dims=[512] * 18,
-        dilations=[1,2,4,4,2,1] * 3,
-        strides=[1,1,1] * 2 + [1,1,2] * 4,
+        block_dims=[512] * 36,
+        dilations=[1,2,4] * 12,
+        strides=[2] * 2 + [1] * 34,
         proj_dim=512,
         num_classes=num_classes,
         vocab_data=dataset.vocab
