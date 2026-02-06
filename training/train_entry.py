@@ -24,7 +24,7 @@ DEVICE = public_device
 TB_LOG_DIR = "tb_logs"
 META_DIR = "basic_data/clean_meta_data.json"
 VOCAB_DIR = "basic_data/vocab_data.json"
-
+NUM_WORKERS = 10
 
 os.makedirs(SAVE_DIR, exist_ok=True)
 os.makedirs(TB_LOG_DIR, exist_ok=True)
@@ -84,16 +84,18 @@ def train():
     train_dataset, val_dataset = random_split(dataset, [train_size, val_size])
 
     train_loader = DataLoader(train_dataset,
-                              num_workers=10,
+                              num_workers=NUM_WORKERS,
                               batch_size=BATCH_SIZE,
                               shuffle=True,
                               collate_fn=collate_fn,
+                              pin_memory=torch.cuda.is_available(),
                               drop_last=True)
     val_loader = DataLoader(val_dataset,
-                            num_workers=10,
+                            num_workers=NUM_WORKERS,
                             batch_size=BATCH_SIZE,
                             shuffle=False,
-                            collate_fn=collate_fn)
+                            collate_fn=collate_fn,
+                            pin_memory=torch.cuda.is_available())
 
     vocab_size = dataset.vocab['vocab_size']
     num_classes = vocab_size + 1
