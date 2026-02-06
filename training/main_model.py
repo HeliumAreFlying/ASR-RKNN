@@ -36,12 +36,12 @@ class ResidualTDNNBlock(nn.Module):
 
     def forward(self, x):
         residual = x
-        out = self.bn1(x)
-        out = self.relu1(out)
-        out = self.conv1(out)
+        out = self.conv1(x)
+        out = self.bn1(out)
         if self.downsample is not None:
             residual = self.downsample(x)
-        return out + residual
+        out += residual
+        return self.relu(out)
 
 class TDNNASR(nn.Module):
     def __init__(
