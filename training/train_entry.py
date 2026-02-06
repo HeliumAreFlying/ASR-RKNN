@@ -12,7 +12,7 @@ from pathlib import Path
 from torch.utils.tensorboard import SummaryWriter
 
 sys.path.append(str(Path(__file__).parent.parent))
-from main_model import TDNNASR, public_device
+from main_model import BiLSTMASR, public_device
 
 FEAT_ROOT = "basic_data/zhvoice_feats"
 META_DIR = "basic_data/feat_meta_data.json"
@@ -110,19 +110,18 @@ def train():
     val_loader = DataLoader(val_dataset, num_workers=NUM_WORKERS, batch_size=BATCH_SIZE, shuffle=False,
                             collate_fn=collate_fn, pin_memory=True)
 
-    model = TDNNASR(
+    model = BiLSTMASR(
         input_dim=80,
-        block_dims=[256] * 8 + [384] * 8 + [512] * 12,
-        dilations=[1, 2, 4] * 9 + [1],
-        strides=[2] + [1] * 8 + [2] + [1] * 18,
+        hidden_dim=512,
+        num_layers=4,
         proj_dim=512,
-        num_classes=full_dataset.vocab['vocab_size'], vocab_data=full_dataset.vocab
+        num_classes=full_dataset.vocab['vocab_size'],
+        vocab_data=full_dataset.vocab
     ).to(DEVICE)
 
     optimizer = torch.optim.RAdam(model.parameters(), lr=LEARNING_RATE)
     scheduler = torch.optim.lr_scheduler.CosineAnnealingWarmRestarts(optimizer, T_0=10, T_mult=2, eta_min=1e-6)
     scaler = GradScaler()
-    reduction = model.reduction
     writer = SummaryWriter(TB_LOG_DIR)
     best_cer, global_step = float('inf'), 0
 
@@ -144,9 +143,8 @@ def train():
 
             with torch.amp.autocast(device_type="cuda"):
                 out = model(x)
-                out = out.squeeze(-1).transpose(1, 2)
-                log_probs = torch.nn.functional.log_softmax(out, dim=-1).transpose(0, 1)
-                output_lengths = torch.clamp((feat_lens // reduction), max=out.size(1))
+                log_probs = out.log_softmax(dim=-1)
+                output_lengths = feat_lens
                 target_lengths = (y != 0).sum(dim=1)
                 loss = nn.CTCLoss(blank=0, reduction='mean', zero_infinity=True)(log_probs, y, output_lengths,
                                                                                  target_lengths)
@@ -176,14 +174,13 @@ def train():
                 x, y, feat_lens = batch
                 x, y, feat_lens = x.to(DEVICE), y.to(DEVICE), feat_lens.to(DEVICE)
                 x = x.transpose(1, 2).unsqueeze(-1).contiguous()
-                out = model(x)
-                out = out.squeeze(-1).transpose(1, 2)
-                log_probs = torch.nn.functional.log_softmax(out, dim=-1).transpose(0, 1)
-                output_lengths = torch.clamp((feat_lens // reduction), max=out.size(1))
+                out = model(x)  # (T, B, C)
+                log_probs = out.log_softmax(dim=-1)
+                output_lengths = feat_lens
                 target_lengths = (y != 0).sum(dim=1)
                 val_loss += nn.CTCLoss(blank=0, reduction='mean', zero_infinity=True)(log_probs, y, output_lengths,
                                                                                       target_lengths).item()
-                preds = torch.argmax(out, dim=-1)
+                preds = torch.argmax(out, dim=-1).transpose(0, 1)
                 for i in range(preds.size(0)):
                     all_preds.append(preds[i][:output_lengths[i]].cpu().tolist())
                     all_targets.append(y[i][:target_lengths[i]].cpu().tolist())
