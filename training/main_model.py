@@ -26,15 +26,6 @@ class ResidualTDNNBlock(nn.Module):
             dilation=(dilation, 1)
         )
 
-        reduction_ratio = 4
-        self.se = nn.Sequential(
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Conv2d(out_dim, out_dim // reduction_ratio, 1),
-            nn.ReLU(),
-            nn.Conv2d(out_dim // reduction_ratio, out_dim, 1),
-            nn.Sigmoid()
-        )
-
         if in_dim != out_dim or stride != 1:
             self.downsample = nn.Sequential(
                 nn.Conv2d(in_dim, out_dim, kernel_size=(1, 1), stride=(stride, 1)),
@@ -48,7 +39,6 @@ class ResidualTDNNBlock(nn.Module):
         out = self.bn1(x)
         out = self.relu1(out)
         out = self.conv1(out)
-        out = out * self.se(out)
         if self.downsample is not None:
             residual = self.downsample(x)
         return out + residual
