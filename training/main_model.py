@@ -16,9 +16,9 @@ class ResidualTDNNBlock(nn.Module):
     def __init__(self, in_dim: int, out_dim: int, dilation: int = 1, stride: int = 1):
         super().__init__()
         padding = dilation
-        self.bn1 = nn.BatchNorm2d(in_dim)
-        self.relu1 = nn.ReLU()
-        self.conv1 = nn.Conv2d(
+        self.bn = nn.BatchNorm2d(in_dim)
+        self.relu = nn.ReLU()
+        self.conv = nn.Conv2d(
             in_dim, out_dim,
             kernel_size=(3, 1),
             stride=(stride, 1),
@@ -36,8 +36,8 @@ class ResidualTDNNBlock(nn.Module):
 
     def forward(self, x):
         residual = x
-        out = self.conv1(x)
-        out = self.bn1(out)
+        out = self.conv(x)
+        out = self.bn(out)
         if self.downsample is not None:
             residual = self.downsample(x)
         out += residual
