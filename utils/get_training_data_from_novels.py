@@ -33,7 +33,7 @@ def prepare_raw_dataset():
 
     with open(CSV_METADATA, 'w', encoding='utf-8') as f:
         for audio_path, pure_text in tasks:
-            f.write(f"{audio_path}\t{pure_text}\n")
+            f.write(f"{audio_path}{pure_text}\n")
 
     speak = comtypes.client.CreateObject("Sapi.SpVoice")
     filestream = comtypes.client.CreateObject("Sapi.SpFileStream")
