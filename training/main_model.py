@@ -24,7 +24,7 @@ class ResidualTDNNBlock(nn.Module):
             padding=(padding, 0),
             dilation=(dilation, 1)
         )
-        self.bn = nn.BatchNorm2d(in_dim)
+        self.bn = nn.BatchNorm2d(out_dim)
         self.relu = nn.ReLU()
 
         if in_dim != out_dim or stride != 1:
