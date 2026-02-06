@@ -16,8 +16,7 @@ class ResidualTDNNBlock(nn.Module):
     def __init__(self, in_dim: int, out_dim: int, dilation: int = 1, stride: int = 1):
         super().__init__()
         padding = dilation
-        self.bn = nn.BatchNorm2d(in_dim)
-        self.relu = nn.ReLU()
+
         self.conv = nn.Conv2d(
             in_dim, out_dim,
             kernel_size=(3, 1),
@@ -25,6 +24,8 @@ class ResidualTDNNBlock(nn.Module):
             padding=(padding, 0),
             dilation=(dilation, 1)
         )
+        self.bn = nn.BatchNorm2d(in_dim)
+        self.relu = nn.ReLU()
 
         if in_dim != out_dim or stride != 1:
             self.downsample = nn.Sequential(
